@@ -16,6 +16,7 @@ class CreateTournamentTableEntriesTable extends Migration
         Schema::create('tournament_table_entries', function (Blueprint $table) {
             $table->tinyIncrements('id');
             $table->unsignedTinyInteger('club_id');
+            $table->tinyInteger('position');
             $table->tinyInteger('played');
             $table->tinyInteger('won');
             $table->tinyInteger('drawn');

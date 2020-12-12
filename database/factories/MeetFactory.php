@@ -22,6 +22,10 @@ class MeetFactory extends Factory
      */
     public function definition()
     {
-        return [];
+        return [
+            'tour_number' =>$this->faker->numberBetween(1, 10),
+            'city' => $this->faker->city,
+            'venue' => $this->faker->sentence(1) . ' Arena',
+        ];
     }
 }

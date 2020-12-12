@@ -17,6 +17,10 @@ class CreateClubMeetTable extends Migration
             $table->unsignedTinyInteger('club_id');
             $table->unsignedTinyInteger('meet_id');
             $table->string('host_or_guest');
+            $table->tinyInteger('score');
+            $table->tinyInteger('missed_score');
+            $table->tinyInteger('points');
+            $table->string('result');
         });
     }
 

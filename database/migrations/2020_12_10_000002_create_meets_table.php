@@ -15,6 +15,10 @@ class CreateMeetsTable extends Migration
     {
         Schema::create('meets', function (Blueprint $table) {
             $table->tinyIncrements('id');
+            $table->tinyInteger('tour_number');
+            $table->string('city');
+            $table->string('venue');
+            $table->string('status');
         });
     }
 

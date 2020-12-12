@@ -23,6 +23,7 @@ class TournamentTableEntryFactory extends Factory
     public function definition()
     {
         return [
+            'position' => $this->faker->unique()->numberBetween(0, 127),
             'played' => $this->faker->numberBetween(0, 127),
             'won' => $this->faker->numberBetween(0, 127),
             'drawn' => $this->faker->numberBetween(0, 127),
