@@ -1,12 +1,12 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\Admin;
 
 use Spatie\Permission\Models\Role;
 use Spatie\Permission\Models\Permission;
 use Illuminate\Http\Request;
 
-class PermissionController extends Controller
+class PermissionController extends AbstractAdminController
 {
     /**
     * Display a listing of the resource.

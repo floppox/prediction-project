@@ -1,13 +1,13 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\Admin;
 
 use App\Models\Club;
 use Illuminate\Http\Request;
 use App\Http\Requests\ClubStoreRequest;
 use App\Http\Requests\ClubUpdateRequest;
 
-class ClubController extends Controller
+class ClubController extends AbstractAdminController
 {
     /**
      * @param \Illuminate\Http\Request $request
