@@ -6,7 +6,7 @@ use \RuntimeException;
 
 abstract class AbstractEnum
 {
-    protected string $value;
+    protected string|int|float $value;
 
     public function __construct(string $value)
     {

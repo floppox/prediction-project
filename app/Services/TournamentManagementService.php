@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use Facades\App\Calculators\ScheduleCalculator;
 use App\Models\Club;
 use App\Models\Meet;
 use App\Models\TournamentTableEntry;
@@ -9,69 +10,54 @@ use Illuminate\Support\Collection;
 
 class TournamentManagementService
 {
+    public function __construct(
+        protected TournamentTableManagementService $tournamentTableManagementService
+    ) {}
+
     public function getTournamentTable(): Collection
     {
-        return TournamentTableEntry::orderBy('position')->get();
+        return $this->tournamentTableManagementService->getTable();
     }
 
     public function coinToss(): void
     {
         $this->cleanOldSeasonData();
-        $this->createMeetsForAllPairs();
-        $this->orderMeets();
+        $this->createScheduledMeets();
+        $this->tournamentTableManagementService->createTable();
+
     }
 
     private function cleanOldSeasonData()
     {
-        Meet::truncate();
         TournamentTableEntry::truncate();
+
+        Meet::all()->each(function(Meet $meet) {
+            $meet->clubs()->detach();
+            $meet->delete();
+        });
     }
 
-    private function createMeetsForAllPairs()
+    private function createScheduledMeets()
     {
-        $clubs = Club::all();
+        $clubs = Club::all()->values();
 
-        $clubs->each(
-            fn($hostClub, $key) => $clubs->except($key)->each(
-                fn($guestClub) => Meet::createMeetForClubs($hostClub,$guestClub)
-            )
-        );
-    }
+        $scheduleTable =  ScheduleCalculator::handle($clubs->count());
 
-    private function orderMeets()
-    {
-        Meet::all()->each(fn($meet) => $this->setTourNumber($meet));
-    }
+        foreach ($scheduleTable as $tourIndex => $meets) {
+            foreach ($meets as $meet) {
+                $hostClubIndex = $meet[0];
+                $guestClubIndex = $meet[1];
 
-    private function setTourNumber($meet)
-    {
-        static $tourClubs = [
-            1 => []
-        ];
+                if (-1 === $guestClubIndex) {
+                    continue;
+                }
 
-        $tourToTryAttaching = 1;
-
-        while (!$meet->tour_number){
-            if ($this->isAnyOfClubsAlreadyInThisTour($meet, $tourClubs[$tourToTryAttaching])) {
-                $tourToTryAttaching++;
-                continue;
+                Meet::createMeetForClubs(
+                    $clubs[$hostClubIndex],
+                    $clubs[$guestClubIndex],
+                    $tourIndex + 1
+                );
             }
-
-            $meet->tour_number = $tourToTryAttaching;
-
-            $tourClubs[$tourToTryAttaching][] = $meet->hostClub->id;
-            $tourClubs[$tourToTryAttaching][] = $meet->guestClub->id;
         }
-    }
-
-    /**
-     * @param $meet
-     * @param array $clubsOfThisTourIds
-     * @return bool
-     */
-    private function isAnyOfClubsAlreadyInThisTour($meet, array $clubsOfThisTourIds): bool
-    {
-        return in_array($meet->hostClub->id, $clubsOfThisTourIds)
-            || in_array($meet->guestClub->id, $clubsOfThisTourIds);
     }
 }

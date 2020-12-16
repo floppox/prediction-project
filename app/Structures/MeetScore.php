@@ -17,14 +17,6 @@ class MeetScore
         ];
     }
 
-    public function fromArray(array $values): self
-    {
-        $this->hostClubScore = $values[0];
-        $this->guestClubScore = $values[1];
-
-        return $this;
-    }
-
     public function incrementHostClubScore(): self
     {
         $this->hostClubScore++;

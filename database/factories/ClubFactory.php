@@ -24,7 +24,7 @@ class ClubFactory extends Factory
     {
         return [
             'name' => $this->faker->name,
-            'notional_strength' => $this->faker->randomNumber(0),
+            'notional_strength' => $this->faker->randomNumber(1),
         ];
     }
 }

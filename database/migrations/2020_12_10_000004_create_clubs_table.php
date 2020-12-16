@@ -14,7 +14,7 @@ class CreateClubsTable extends Migration
     public function up()
     {
         Schema::create('clubs', function (Blueprint $table) {
-            $table->tinyIncrements('id');
+            $table->id();
             $table->string('name');
             $table->integer('notional_strength');
         });

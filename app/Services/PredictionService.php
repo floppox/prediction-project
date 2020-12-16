@@ -9,49 +9,55 @@ use App\Structures\PredictionEntry;
 use Illuminate\Support\Collection;
 use Facades\App\Calculators\MeetResultProbabilityCalculator;
 use Facades\App\Calculators\ReachPointsSumProbabilityCalculator;
+use Facades\App\Calculators\SimpleProbabilityCalculator;
 
 class PredictionService
 {
     public function getPredictionResults(): Collection
     {
         return $this->getTournamentTableEntries()->map(
-            fn($tournamentTableEntry) =>  $this->getPredictionEntry($tournamentTableEntry)
-        );
+            fn($tournamentTableEntry) => $this->getPredictionEntry($tournamentTableEntry)->toArray()
+        )
+            ->sortByDesc('championship_probability')
+            ->sortBy('current_position')
+            ->values();
     }
 
     private function getTournamentTableEntries(): Collection
     {
-        static $tournamentTableEntry = null;
+        static $tournamentTableEntries = null;
 
-        if(null == $tournamentTableEntry) {
-            TournamentTableEntry::all();
+        if(null == $tournamentTableEntries) {
+            $tournamentTableEntries = TournamentTableEntry::all();
         }
 
-        return $tournamentTableEntry;
+        return $tournamentTableEntries;
     }
 
     private function getPredictionEntry($tournamentTableEntry): PredictionEntry
     {
-        return app(PredictionEntry::class)->fromArray(
-            [
-                'club_id' => $tournamentTableEntry->club->id,
-                'club_name' => $tournamentTableEntry->club->name,
-                'championship_probability' => $this->calculateChampionshipProbability(
-                    $tournamentTableEntry->position,
-                    $tournamentTableEntry->points,
-                    $tournamentTableEntry->club,
-                )
-            ]
+        return new PredictionEntry(
+            $tournamentTableEntry->club->id,
+            $tournamentTableEntry->club->name,
+            $tournamentTableEntry->club->tournamentTableEntry->position,
+            $this->calculateChampionshipProbability(
+                $tournamentTableEntry->position,
+                $tournamentTableEntry->club,
+            )
         );
     }
 
-    private function calculateChampionshipProbability(int $position, int $points, Club $club): float
+    private function calculateChampionshipProbability(int $position, Club $club): float
     {
         if ($this->tournamentFinished($club)) {
             return 1 === $position;
         }
 
-        return $this->probabilityToOvertakeLeader($club) - $this->probabilityOthersOvertakeLeader($club);
+        return
+            $this->probabilityToOvertakeLeader($club) *
+            (1 - $this->probabilityOthersOvertakeLeader($club))
+            ;
+
     }
 
     private function tournamentFinished(Club $club): bool
@@ -69,14 +75,18 @@ class PredictionService
         static $probabilities = null;
 
         if (null === $probabilities) {
-            $probabilities = $this->getTournamentTableEntries()->map(
-                fn(TournamentTableEntry $tournamentTableEntry) =>
-                    $this->calculateOvertakeLeaderProbability(
-                        $tournamentTableEntry->points,
-                        $tournamentTableEntry->club
-                    )
+            $probabilities = $this->getTournamentTableEntries()->mapWithKeys(
+                fn(TournamentTableEntry $tournamentTableEntry) => [
+                    $tournamentTableEntry->club->id =>
+                        $this->calculateOvertakeLeaderProbability(
+                            $tournamentTableEntry->points,
+                            $tournamentTableEntry->club
+                        )
+                ]
             );
         }
+
+        return $probabilities;
     }
 
     private function calculateOvertakeLeaderProbability($points, Club $club): float
@@ -124,6 +134,12 @@ class PredictionService
 
     private function probabilityOthersOvertakeLeader(Club $club): float
     {
-        return $this->getCalculatedProbabilities()->except($club->id)->sum();
+        return $this->getCalculatedProbabilities()
+            ->except($club->id)
+            ->reduce(
+                fn($carry,$currentProbability) =>
+                    SimpleProbabilityCalculator::compatibleSum($carry, $currentProbability),
+                0
+            );
     }
 }

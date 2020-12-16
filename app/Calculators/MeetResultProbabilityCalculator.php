@@ -7,18 +7,23 @@ use App\Structures\ResultProbability;
 class MeetResultProbabilityCalculator
 {
     const HOME_MEET_FACTOR = 2;
+    const MAX_POOSIBLE_DRAWN_PROVBILITY = 0.7;
+    const MIN_POSSIBLE_STRENGTH = 0.1;
 
     public function handle(
         float|int $hostClubStrength,
         float|int $guestClubStrength
     ): ResultProbability
     {
-        $hostClubStrength *= self::HOME_MEET_FACTOR;
+        $hostClubStrength = self::HOME_MEET_FACTOR * max($hostClubStrength, self::MIN_POSSIBLE_STRENGTH) ;
+        $guestClubStrength = max($guestClubStrength, self::MIN_POSSIBLE_STRENGTH);
 
         $totalStrengthAmount = $hostClubStrength + $guestClubStrength;
 
-        $drawnGameProbability =
-            abs($hostClubStrength - $guestClubStrength) / $totalStrengthAmount;
+        $drawnGameProbability = min(
+            abs($hostClubStrength - $guestClubStrength) / $totalStrengthAmount,
+            self::MAX_POOSIBLE_DRAWN_PROVBILITY
+        );
 
         $nonDrawnProbability = 1 - $drawnGameProbability;
 

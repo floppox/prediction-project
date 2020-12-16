@@ -17,11 +17,13 @@ class AddForeignsToClubMeetTable extends Migration
             $table
                 ->foreign('club_id')
                 ->references('id')
-                ->on('clubs');
+                ->on('clubs')
+                ->onDelete('cascade');
             $table
                 ->foreign('meet_id')
                 ->references('id')
-                ->on('meets');
+                ->on('meets')
+                ->onDelete('cascade');
         });
     }
 

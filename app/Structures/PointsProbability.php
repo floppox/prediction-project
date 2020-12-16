@@ -9,13 +9,13 @@ class PointsProbability
         private float $probability
     ) {}
 
-    public function getPoints(): float
-    {
-        return $this->probability;
-    }
-
-    public function getProbability(): int
+    public function getPoints(): int
     {
         return $this->points;
+    }
+
+    public function getProbability(): float
+    {
+        return $this->probability;
     }
 }

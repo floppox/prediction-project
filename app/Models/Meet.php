@@ -42,8 +42,28 @@ class Meet extends Model
 
     public $timestamps = false;
 
-    public static function createMeetForClubs(Club $hostClub, Club $guestClub): self
+
+    public static function createMeetForClubs(Club $hostClub, Club $guestClub, $tourNumber): self
     {
+        $meet = self::factory(self::class)->create(['tour_number' => $tourNumber]);
+
+        $meet->clubs()->attach($hostClub, [
+            'host_or_guest' => 'host',
+            'score' => 0,
+            'points' => 0,
+            'missed_score' => 0,
+            'result' => '',
+            ]);
+
+        $meet->clubs()->attach($guestClub, [
+            'host_or_guest' => 'guest',
+            'score' => 0,
+            'points' => 0,
+            'missed_score' => 0,
+            'result' => '',
+        ]);
+
+        return $meet;
     }
 
     public function clubs(): BelongsToMany
@@ -81,6 +101,11 @@ class Meet extends Model
         $this->clubs()->updateExistingPivot($this->hostClub, ['missed_score' => $missedScore]);
     }
 
+    public function setHostClubPoints(int $points)
+    {
+        $this->clubs()->updateExistingPivot($this->hostClub, ['points' => $points]);
+    }
+
     public function setGuestClubResult(string $result)
     {
         $this->clubs()->updateExistingPivot($this->guestClub, ['result' => $result]);
@@ -94,5 +119,10 @@ class Meet extends Model
     public function setGuestClubMissedScore(int $missedScore)
     {
         $this->clubs()->updateExistingPivot($this->guestClub, ['missed_score' => $missedScore]);
+    }
+
+    public function setGuestClubPoints(int $points)
+    {
+        $this->clubs()->updateExistingPivot($this->guestClub, ['points' => $points]);
     }
 }

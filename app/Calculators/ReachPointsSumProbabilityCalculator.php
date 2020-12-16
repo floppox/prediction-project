@@ -4,45 +4,62 @@ namespace App\Calculators;
 
 use App\Enums\PointsForResult;
 use App\Structures\PointsProbability;
-use App\Structures\PointsProbabilityAccumulator;
 use App\Structures\ResultProbability;
 use Illuminate\Support\Collection;
 
 class ReachPointsSumProbabilityCalculator
 {
-    public function handle($pointsToReachLeader, Collection $resultProbabilities)
+    private ?Collection $probabilityChains = null;
+
+    public function handle($pointsToReachLeader, Collection $resultProbabilities): float
     {
-        $accumulatedPoints = app(PointsProbabilityAccumulator::class);
+        $resultProbabilities->each(
+            fn($meetResultProbability) => $this->appendProbabilityChains($meetResultProbability)
+        );
 
-        $pointsProbabilities = $this->calculatePointsProbability($resultProbabilities);
+        $result = $this->probabilityChains
+            ->filter(
+                fn($chain) => $pointsToReachLeader < collect($chain)->sum(
+                        fn(PointsProbability $pointsProbability) => $pointsProbability->getPoints()
+                    )
+            )
+            ->map(
+                fn($chain) => collect($chain)->reduce(
+                    fn(
+                        float $carry,
+                        PointsProbability $pointsProbability
+                    ) => $carry * $pointsProbability->getProbability(),
+                    1
+                )
+            )
+            ->sum();
 
-        foreach ($pointsProbabilities as $pointsProbability) {
-            if ($accumulatedPoints->points_sum > $pointsToReachLeader) {
-                $accumulatedPoints->probability_product;
-            }
+        $this->probabilityChains = null;
 
-            $accumulatedPoints->addPoints($pointsProbability->getPoints()) ;
-            $accumulatedPoints->multiplyProbability($pointsProbability->getProbability());
-        }
-
-        return 0;
+        return $result;
     }
 
-    private function calculatePointsProbability(ResultProbability $resultProbabilities): Collection
+    private function appendProbabilityChains(ResultProbability $meetResultProbability)
     {
-        return $resultProbabilities->map(
-            fn(ResultProbability $resultProbability) => collect([
-                new PointsProbability(
-                    PointsForResult::DRAWN,
-                    $resultProbability->win() + $resultProbability->drawn()
-                ),
-                new PointsProbability(
-                    PointsForResult::WIN - PointsForResult::DRAWN,
-                    $resultProbability->win()
-                ),
-            ])
-        )
-            ->collapse()
-            ->sortBy(['probability', 'desc']);
+        if (null === $this->probabilityChains) {
+            $this->probabilityChains = collect([
+                []
+            ]);
+        }
+
+        $newProbabilityChains = [];
+
+        foreach ($this->probabilityChains as $chain) {
+            $newProbabilityChains[] = [ ...$chain, new PointsProbability(
+                PointsForResult::WIN,
+                $meetResultProbability->win()
+            )];
+            $newProbabilityChains[] = [ ...$chain, new PointsProbability(
+                PointsForResult::DRAWN,
+                $meetResultProbability->drawn()
+            )];
+        }
+
+        $this->probabilityChains = collect($newProbabilityChains);
     }
 }

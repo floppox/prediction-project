@@ -46,7 +46,13 @@ class Club extends Model
 
     public function meets()
     {
-        return $this->belongsToMany(Meet::class);
+        return $this->belongsToMany(Meet::class)->withPivot(
+            'host_or_guest',
+            'score',
+            'missed_score',
+            'points',
+            'result'
+        );
     }
 
     public function meetsToPlay()

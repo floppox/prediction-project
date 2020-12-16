@@ -20,27 +20,30 @@ class MeetPlayingService
 
     public function playMeet(Meet $meet)
     {
-        $resultForHostClub = $this->getRandomizeMeetResult(
+        $resultForHostClub = $this->getRandomizedMeetResult(
             $meet->hostClub->notional_strength,
             $meet->guestClub->notional_strength
         );
+        $resultForGuestClub = MeetResult::inverse($resultForHostClub);
 
-        $score = $this->getScoreForResult($resultForHostClub);
+        $score = $this->getRandomizedScoreForResult($resultForHostClub);
 
         $meet->setHostClubResult($resultForHostClub->getValue());
         $meet->setHostClubScore($score->getHostClubScore());
         $meet->setHostClubMissedScore($score->getGuestClubScore());
+        $meet->setHostClubPoints($resultForHostClub->getPoints());
 
-        $meet->setGuestClubResult(MeetResult::inverse($resultForHostClub)->getValue());
+        $meet->setGuestClubResult($resultForGuestClub->getValue());
         $meet->setGuestClubScore($score->getGuestClubScore());
         $meet->setGuestClubMissedScore($score->getHostClubScore());
+        $meet->setGuestClubPoints($resultForGuestClub->getPoints());
 
         $meet->status = MeetStatus::COMPLETED;
 
         $meet->save();
     }
 
-    private function getRandomizeMeetResult(
+    private function getRandomizedMeetResult(
         int $hostClubStrength,
         int $guestClubStrength
     ) : MeetResult
@@ -51,17 +54,17 @@ class MeetPlayingService
         $choices = [
             ...array_fill(
                 0,
-                10 * round($probabilities->win()),
+                round(10 * $probabilities->win()),
                 MeetResult::WIN
             ),
             ...array_fill(
                 0,
-                10 * round($probabilities->drawn()),
+                round(10 * $probabilities->drawn()),
                 MeetResult::DRAWN
             ),
             ...array_fill(
                 0,
-                10 * round($probabilities->lose()),
+                round(10 * $probabilities->lose()),
                 MeetResult::LOSE
             ),
         ];
@@ -71,19 +74,16 @@ class MeetPlayingService
         );
     }
 
-    private function getScoreForResult(MeetResult $resultForHostClub): MeetScore
+    private function getRandomizedScoreForResult(MeetResult $resultForHostClub): MeetScore
     {
         $hostClubScore = rand(0, ceil(self::MAX_POSSIBLE_SCORE / 2));
 
         $guestClubScore = match($resultForHostClub->getValue()) {
-            MeetResult::WIN => rand(0, $resultForHostClub->getValue()),
-            MeetResult::DRAWN => $resultForHostClub->getValue(),
-            MeetResult::LOSE => rand($resultForHostClub->getValue(), self::MAX_POSSIBLE_SCORE),
+            MeetResult::WIN => rand(0, $hostClubScore - 1),
+            MeetResult::DRAWN => $hostClubScore,
+            MeetResult::LOSE => rand($hostClubScore + 1, self::MAX_POSSIBLE_SCORE),
         };
 
-        return app(MeetScore::class)->fromArray([
-            $hostClubScore,
-            $guestClubScore,
-        ]);
+        return new MeetScore($hostClubScore, $guestClubScore);
     }
 }

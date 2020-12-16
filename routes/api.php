@@ -19,12 +19,13 @@ use Illuminate\Support\Facades\Route;
 
 Route::get('/tour/list', [TourController::class, 'index']);
 Route::post('/tour/play', [TourController::class, 'playNextTour']);
-Route::get('/tour/{tour_number}', [TourController::class, 'show']);
+Route::get('/tour/{tour_number}', [TourController::class, 'show'])
+    ->where('tour_number', '[0-9]+');
 
 Route::get('/tournament/table', [TournamentController::class, 'showTable']);
 Route::post('/tournament/toss', [TournamentController::class, 'coinToss']);
 
-Route::get('/prediction', [PredictionController::class]);
+Route::get('/prediction', PredictionController::class);
 
 Route::middleware('auth:api')->get('/user', function (Request $request) {
     return $request->user();

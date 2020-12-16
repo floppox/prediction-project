@@ -27,4 +27,13 @@ class MeetResult extends AbstractEnum
             self::LOSE
         ];
     }
+
+    public function getPoints(): int
+    {
+        return match ($this->value) {
+            self::WIN => PointsForResult::WIN,
+            self::LOSE => PointsForResult::LOSE,
+            self::DRAWN => PointsForResult::DRAWN
+        };
+    }
 }

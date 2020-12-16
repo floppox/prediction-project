@@ -14,17 +14,17 @@ class CreateTournamentTableEntriesTable extends Migration
     public function up()
     {
         Schema::create('tournament_table_entries', function (Blueprint $table) {
-            $table->tinyIncrements('id');
-            $table->unsignedTinyInteger('club_id');
-            $table->tinyInteger('position');
-            $table->tinyInteger('played');
-            $table->tinyInteger('won');
-            $table->tinyInteger('drawn');
-            $table->tinyInteger('lost');
-            $table->tinyInteger('gf');
-            $table->tinyInteger('ga');
-            $table->tinyInteger('gd');
-            $table->tinyInteger('points');
+            $table->id();
+            $table->unsignedBigInteger('club_id');
+            $table->tinyInteger('position')->nullable();
+            $table->tinyInteger('played')->nullable();
+            $table->tinyInteger('won')->nullable();
+            $table->tinyInteger('drawn')->nullable();
+            $table->tinyInteger('lost')->nullable();
+            $table->tinyInteger('gf')->nullable();
+            $table->tinyInteger('ga')->nullable();
+            $table->tinyInteger('gd')->nullable();
+            $table->tinyInteger('points')->nullable();
         });
     }
 

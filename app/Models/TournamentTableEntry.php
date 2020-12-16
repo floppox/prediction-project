@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Models\Scopes\Searchable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 /**
  * App\Models\TournamentTableEntry
@@ -54,6 +55,7 @@ class TournamentTableEntry extends Model
         'ga',
         'gd',
         'points',
+        'position'
     ];
 
     protected $searchableFields = ['*'];
@@ -62,8 +64,15 @@ class TournamentTableEntry extends Model
 
     public $timestamps = false;
 
-    public function club()
+    public function club(): BelongsTo
     {
         return $this->belongsTo(Club::class);
+    }
+
+    public function setPosition(int $value): self
+    {
+        $this->position = $value;
+
+        return $this;
     }
 }

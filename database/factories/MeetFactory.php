@@ -2,6 +2,7 @@
 
 namespace Database\Factories;
 
+use App\Enums\MeetStatus;
 use App\Models\Meet;
 use Illuminate\Support\Str;
 use Illuminate\Database\Eloquent\Factories\Factory;
@@ -26,6 +27,7 @@ class MeetFactory extends Factory
             'tour_number' =>$this->faker->numberBetween(1, 10),
             'city' => $this->faker->city,
             'venue' => $this->faker->sentence(1) . ' Arena',
+            'status' => MeetStatus::FIXTURE
         ];
     }
 }

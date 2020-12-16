@@ -10,6 +10,17 @@ use App\Models\TournamentTableEntry;
 
 class TournamentTableManagementService
 {
+    public function getTable()
+    {
+        return TournamentTableEntry::orderBy('position')->get();
+    }
+
+    public function createTable()
+    {
+        Club::all()->each(
+            fn(Club $club) => TournamentTableEntry::create(['club_id'=>$club->id])
+        );
+    }
 
     public function updateTable(Meet $meet)
     {
@@ -18,31 +29,33 @@ class TournamentTableManagementService
         $this->updatePositions();
     }
 
-    private function updateTableEntry(Club $hostClub)
+    private function updateTableEntry(Club $club)
     {
-        $entry = TournamentTableEntry::where('club_id', $hostClub->id)
-            ->firstOrCreate([])
-            ->update($this->getTableEntryCalculations($hostClub));
+        TournamentTableEntry::where('club_id', $club->id)
+            ->firstOrCreate(['club_id'=>$club->id])
+            ->update(
+                $this->getTableEntryCalculations($club),
+            );
     }
 
     /**
-     * @param Club $hostClub
+     * @param Club $club
      * @return array
      */
-    private function getTableEntryCalculations(Club $hostClub): array
+    private function getTableEntryCalculations(Club $club): array
     {
-        $meetsRelation = $hostClub->meets()
-            ->where('status', MeetStatus::COMPLETED);
+        $meetsRelation = $club->meets()
+            ->where('status', MeetStatus::COMPLETED)->get();
 
         $played = $meetsRelation->count();
-        $win = $meetsRelation->wherePivot('result', MeetResult::WIN)->count();
-        $drawn = $meetsRelation->wherePivot('result', MeetResult::DRAWN)->count();
-        $lost = $meetsRelation->wherePivot('result', MeetResult::LOSE)->count();
+        $win = $meetsRelation->where('pivot.result', '=', MeetResult::WIN)->count();
+        $drawn = $meetsRelation->where('pivot.result', '=', MeetResult::DRAWN)->count();
+        $lost = $meetsRelation->where('pivot.result', '=', MeetResult::LOSE)->count();
         $gf = $meetsRelation->sum('pivot.score');
         $ga = $meetsRelation->sum('pivot.missed_score');
 
         $gd = $gf - $ga;
-        $points = $this->calculatePoints($win, $lost, $drawn);
+        $points = $meetsRelation->sum('pivot.points');
 
         return [
             'played' => $played,
@@ -56,25 +69,15 @@ class TournamentTableManagementService
         ];
     }
 
-    /**
-     * @param int $win
-     * @param int $lost
-     * @param int $drawn
-     * @return int
-     */
-    private function calculatePoints(int $win, int $lost, int $drawn): int
-    {
-        return ($win - $lost) * 3 + $drawn;
-    }
-
     private function updatePositions()
     {
         TournamentTableEntry::orderByDesc('points')
             ->orderByDesc('gd')
             ->get()
+            ->values()
             ->each(
-                fn(TournamentTableEntry $entry, $position) =>
-                    $entry->update(['position', $position])
+                fn(TournamentTableEntry $entry, $index) =>
+                    $entry->setPosition($index + 1)->save()
             );
     }
 }

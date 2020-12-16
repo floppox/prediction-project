@@ -14,8 +14,8 @@ class CreateClubMeetTable extends Migration
     public function up()
     {
         Schema::create('club_meet', function (Blueprint $table) {
-            $table->unsignedTinyInteger('club_id');
-            $table->unsignedTinyInteger('meet_id');
+            $table->unsignedBigInteger('club_id');
+            $table->unsignedBigInteger('meet_id');
             $table->string('host_or_guest');
             $table->tinyInteger('score');
             $table->tinyInteger('missed_score');

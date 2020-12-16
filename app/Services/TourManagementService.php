@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\Meet;
+use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 class TourManagementService
 {
@@ -38,6 +39,10 @@ class TourManagementService
         $nextTourNumber = Meet::whereIn('status', ['fixture'])
             ->orderBy('tour_number')
             ->value('tour_number');
+
+        if(null === $nextTourNumber) {
+            throw new NotFoundHttpException('Next Tour Not Found');
+        }
 
         $meets = $this->getTour($nextTourNumber);
 
