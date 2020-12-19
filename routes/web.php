@@ -18,14 +18,14 @@ use App\Http\Controllers\Admin\PermissionController;
 */
 
 Route::get('/', function () {
-    return view('welcome');
+    return view('app');
 });
 
 Auth::routes();
 
-Route::get('/home', [HomeController::class, 'index'])->name('home');
+Route::get('/admin', [HomeController::class, 'index'])->name('home');
 
-Route::prefix('/')
+Route::prefix('/admin')
     ->middleware('auth')
     ->group(function () {
         Route::resource('roles', RoleController::class);

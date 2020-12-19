@@ -23,6 +23,6 @@ class HomeController extends AbstractAdminController
      */
     public function index()
     {
-        return view('home');
+        return view('admin');
     }
 }
