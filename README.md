@@ -1,62 +1,40 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400"></a></p>
+#Championsip Prediction
 
-<p align="center">
-<a href="https://travis-ci.org/laravel/framework"><img src="https://travis-ci.org/laravel/framework.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+This is created as a test task for Insider company.
 
-## About Laravel
+## Task
+In this project, we expect you to complete a simulation. In this simulation, there will be a group of
+football teams and the simulation will show match results and the league table. Your task is to estimate
+the final league table.
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+League Rules:
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+-There will be four teams in the league (if you wish, you can choose teams that have different strengths
+and you can determine the results of the matches depending on the strengths of these selected teams).
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+-Other rules in the league (scoring, points, goal difference, etc.) will be the same as the rules of the
+Premier League.
 
-## Learning Laravel
+## Demo
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+http://ec2-18-184-225-237.eu-central-1.compute.amazonaws.com/
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains over 1500 video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+Minimal admin panel:  
+http://ec2-18-184-225-237.eu-central-1.compute.amazonaws.com/admin  
+login: `admin@admin.com`  
+password: `admin`  
 
-## Laravel Sponsors
+Go to Apps -> Clubs to manage teams.
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the Laravel [Patreon page](https://patreon.com/taylorotwell).
 
-### Premium Partners
+## Implementation details 
 
-- **[Vehikl](https://vehikl.com/)**
-- **[Tighten Co.](https://tighten.co)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Cubet Techno Labs](https://cubettech.com)**
-- **[Cyber-Duck](https://cyber-duck.co.uk)**
-- **[Many](https://www.many.co.uk)**
-- **[Webdock, Fast VPS Hosting](https://www.webdock.io/en)**
-- **[DevSquad](https://devsquad.com)**
-- **[Curotec](https://www.curotec.com/)**
-- **[OP.GG](https://op.gg)**
-
-## Contributing
-
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
-
-## Code of Conduct
-
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
-
-## Security Vulnerabilities
-
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
-
-## License
-
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+- the project is based on Laravel 8.0 and running on php8, mysql:8, nginx, driven by Docker
+- the pretty new Vemto (https://vemto.app/) tool is used to generate project stub, models and simple admin pannel.
+- frontend is implemented with VueMaterial (https://vuematerial.io/) framework. It's made using KISS principle and doesn't show 
+  the best code design because the frontend was not the priority
+- the code, responsible to prediction is encapsulated in `Services\PredictionService` 
+  and `Calculators\...` classes. Unfortunately it's still messy enough and implementation is not mathematically strict.
+  The consultation of a professional mathematician would be needed if enyone wants to improve this.
+- On php8 we could not use domain-related word Match because `match` became the keyword. 
+  That's why Meet was considered instead. Also Clubs was considered for teams.
