@@ -7,25 +7,28 @@ use App\Structures\ResultProbability;
 class MeetResultProbabilityCalculator
 {
     const HOME_MEET_FACTOR = 2;
-    const MAX_POOSIBLE_DRAWN_PROVBILITY = 0.7;
-    const MIN_POSSIBLE_STRENGTH = 0.1;
+    const MAX_POSSIBLE_NON_DRAWN_PROBABILITY = 0.99;
+    const MIN_POSSIBLE_NON_DRAWN_PROBABILITY = 0.01;
 
     public function handle(
-        float|int $hostClubStrength,
-        float|int $guestClubStrength
+        int $hostClubStrength,
+        int $guestClubStrength
     ): ResultProbability
     {
-        $hostClubStrength = self::HOME_MEET_FACTOR * max($hostClubStrength, self::MIN_POSSIBLE_STRENGTH) ;
-        $guestClubStrength = max($guestClubStrength, self::MIN_POSSIBLE_STRENGTH);
+        $this->validate($hostClubStrength, $guestClubStrength);
+
+        $hostClubStrength = self::HOME_MEET_FACTOR * $hostClubStrength;
 
         $totalStrengthAmount = $hostClubStrength + $guestClubStrength;
 
-        $drawnGameProbability = min(
+        $nonDrawnProbability = min(
             abs($hostClubStrength - $guestClubStrength) / $totalStrengthAmount,
-            self::MAX_POOSIBLE_DRAWN_PROVBILITY
+            self::MAX_POSSIBLE_NON_DRAWN_PROBABILITY
         );
 
-        $nonDrawnProbability = 1 - $drawnGameProbability;
+        $nonDrawnProbability = max($nonDrawnProbability, self::MIN_POSSIBLE_NON_DRAWN_PROBABILITY);
+
+        $drawnGameProbability = 1 - $nonDrawnProbability;
 
         $hostWinProbability = $hostClubStrength * $nonDrawnProbability / $totalStrengthAmount;
 
@@ -36,5 +39,14 @@ class MeetResultProbabilityCalculator
             drawn:$drawnGameProbability,
             lose: $hostLoseProbability
         );
+    }
+
+    private function validate(int ...$parameters)
+    {
+        foreach ($parameters as $a) {
+            if ($a < 1 || $a > 10) {
+                throw new \RuntimeException("Invalid Strength $a");
+            }
+        }
     }
 }

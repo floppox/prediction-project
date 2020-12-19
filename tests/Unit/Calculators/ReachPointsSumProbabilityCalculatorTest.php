@@ -15,7 +15,7 @@ class ReachPointsSumProbabilityCalculatorTest extends TestCase
 {
 
     /**
-     * @dataProvider dataProveder
+     * @dataProvider dataProvider
      */
     public function testHandle($expectedOutcome, $targetPoints, $strengths): void
     {
@@ -26,23 +26,33 @@ class ReachPointsSumProbabilityCalculatorTest extends TestCase
 
         $result = ReachPointsSumProbabilityCalculator::handle($targetPoints, $resultProbabilities);
 
-//        $this->assertEquals($expectedOutcome, $result);
         $this->assertTrue(
-            abs($expectedOutcome - $result) < 0.1
+            abs($expectedOutcome - $result) < 0.01,
+            "Got $result when expected $expectedOutcome"
         );
     }
 
-    public function dataProveder()
+    public function dataProvider()
     {
         yield [
             0.99,
-            0.99,
-            [[5,0],[5,1],[5,3],[5,7],[5,10]],
+            1,
+            [[5,1],[5,1],[5,3],[5,7],[5,10]],
+        ];
+        yield [
+            0.01,
+            15,
+            [[5,1],[5,1],[5,3],[5,7],[5,10]],
+        ];
+        yield [
+            0.28,
+            10,
+            [[5,1],[5,1],[5,3],[5,7],[5,10]],
         ];
         yield [
             0,
             100,
-            [[5,0],[5,1],[5,3],[5,7],[5,10]],
+            [[5,1],[5,1],[5,3],[5,7],[5,10]],
         ];
         yield [
             0.99,
@@ -50,12 +60,12 @@ class ReachPointsSumProbabilityCalculatorTest extends TestCase
             [[10,1],[10,1],[10,1],[10,1],[10,1],[10,1],[10,1],[10,1],[10,1],[10,1],],
         ];
         yield [
-            0.9,
+            0.99,
             2,
-            [[5,0],[5,1],[5,3],[5,7],[5,10]],
+            [[5,1],[5,1],[5,3],[5,7],[5,10]],
         ];
         yield [
-            0.5,
+            0.4,
             3,
             [[1,1],[1,1],],
         ];

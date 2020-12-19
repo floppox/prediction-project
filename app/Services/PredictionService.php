@@ -15,11 +15,11 @@ class PredictionService
 {
     public function getPredictionResults(): Collection
     {
-        return $this->getTournamentTableEntries()->map(
-            fn($tournamentTableEntry) => $this->getPredictionEntry($tournamentTableEntry)->toArray()
-        )
+        return $this->getTournamentTableEntries()
+            ->map(
+                fn($tournamentTableEntry) => $this->getPredictionEntry($tournamentTableEntry)->toArray()
+            )
             ->sortByDesc('championship_probability')
-            ->sortBy('current_position')
             ->values();
     }
 
@@ -39,25 +39,25 @@ class PredictionService
         return new PredictionEntry(
             $tournamentTableEntry->club->id,
             $tournamentTableEntry->club->name,
-            $tournamentTableEntry->club->tournamentTableEntry->position,
+            $tournamentTableEntry->position,
             $this->calculateChampionshipProbability(
-                $tournamentTableEntry->position,
+                $tournamentTableEntry->position ,
                 $tournamentTableEntry->club,
             )
         );
     }
 
-    private function calculateChampionshipProbability(int $position, Club $club): float
+    private function calculateChampionshipProbability(?int $position, Club $club): float
     {
         if ($this->tournamentFinished($club)) {
-            return 1 === $position;
+            return 1 === $position ? 100 : 0;
         }
 
-        return
-            $this->probabilityToOvertakeLeader($club) *
-            (1 - $this->probabilityOthersOvertakeLeader($club))
-            ;
+        if ($this->noMeetsCompleted($club)) {
+            return round(100 / Club::count());
+        }
 
+        return round($this->getFinalProbability($club->id) * 100);
     }
 
     private function tournamentFinished(Club $club): bool
@@ -65,36 +65,65 @@ class PredictionService
         return 0 === $club->meetsToPlay()->count();
     }
 
-    private function probabilityToOvertakeLeader(Club $club):float
+    private function noMeetsCompleted(Club $club): bool
     {
-        return $this->getCalculatedProbabilities()[$club->id];
+        return 0 === $club->meetsPlayed()->count();
     }
 
-    private function getCalculatedProbabilities(): Collection
+    private function getFinalProbability(int $clubId): float
+    {
+        static $finalProbabilities = null;
+
+        if (null !== $finalProbabilities) {
+            return $finalProbabilities[$clubId];
+        }
+
+        $finalProbabilities = $this->getCalculatedOvertakeLeaderProbabilities()->map(
+            fn(float $overtakeLederProbability, int $clubId) => $this->probabilityToOvertakeLeader($clubId) *
+                (1 - $this->probabilityOthersOvertakeLeader($clubId))
+        );
+
+        if ($finalProbabilities->sum() == 0) {
+            return 1 / $finalProbabilities->count();
+        }
+
+        $ratio = 1 / $finalProbabilities->sum();
+
+        $finalProbabilities = $finalProbabilities->map(
+            fn(float $finalProbability) => $finalProbability * $ratio
+        );
+
+        return $finalProbabilities[$clubId];
+    }
+
+    private function probabilityToOvertakeLeader(int $clubId):float
+    {
+        return $this->getCalculatedOvertakeLeaderProbabilities()[$clubId];
+    }
+
+    private function getCalculatedOvertakeLeaderProbabilities(): Collection
     {
         static $probabilities = null;
 
-        if (null === $probabilities) {
-            $probabilities = $this->getTournamentTableEntries()->mapWithKeys(
-                fn(TournamentTableEntry $tournamentTableEntry) => [
-                    $tournamentTableEntry->club->id =>
-                        $this->calculateOvertakeLeaderProbability(
-                            $tournamentTableEntry->points,
-                            $tournamentTableEntry->club
-                        )
-                ]
-            );
+        if (null !== $probabilities) {
+            return $probabilities;
         }
+
+        $probabilities = $this->getTournamentTableEntries()->mapWithKeys(
+            fn(TournamentTableEntry $tournamentTableEntry) => [
+                $tournamentTableEntry->club->id =>
+                    $this->calculateOvertakeLeaderProbability(
+                        $tournamentTableEntry->points,
+                        $tournamentTableEntry->club
+                    )
+            ]
+        );
 
         return $probabilities;
     }
 
     private function calculateOvertakeLeaderProbability($points, Club $club): float
     {
-        if ($this->cannotReachLeader($points, $club)) {
-            return 0;
-        }
-
         $resultProbabilities = $club->meetsToPlay->map(
             fn(Meet $meet) => MeetResultProbabilityCalculator::handle(
                 $this->getStatisticalStrength($meet->hostClub),
@@ -102,20 +131,17 @@ class PredictionService
             )
         );
 
-        return ReachPointsSumProbabilityCalculator::handle(
-            $this->getPointsToReachLeader($points),
+        $reachPointsProbability = ReachPointsSumProbabilityCalculator::handle(
+            $this->getPointsToOvertakeLeader($points),
             $resultProbabilities
         );
+
+        return $reachPointsProbability;
     }
 
-    private function cannotReachLeader(int $availablePoints, Club $club): bool
+    private function getPointsToOvertakeLeader(int $availablePoints): int
     {
-        return $this->getPointsToReachLeader($availablePoints) > ($club->meetsToPlay()->count() * 3);
-    }
-
-    private function getPointsToReachLeader(int $availablePoints): int
-    {
-        return $this->getLeaderPoints() - $availablePoints;
+        return $this->getLeaderPoints() - $availablePoints + 1;
     }
 
     private function getLeaderPoints(): int
@@ -125,17 +151,15 @@ class PredictionService
 
     private function getStatisticalStrength(Club $club): int
     {
-        return $club->tournamentTableEntry->points
-            /
-            $this->getTournamentTableEntries()->sum('points')
-            *
-            100;
+        $ratio = $club->tournamentTableEntry->points / $this->getTournamentTableEntries()->sum('points');
+
+        return max($ratio * 10, 1);
     }
 
-    private function probabilityOthersOvertakeLeader(Club $club): float
+    private function probabilityOthersOvertakeLeader(Int $clubId): float
     {
-        return $this->getCalculatedProbabilities()
-            ->except($club->id)
+        return $this->getCalculatedOvertakeLeaderProbabilities()
+            ->except($clubId)
             ->reduce(
                 fn($carry,$currentProbability) =>
                     SimpleProbabilityCalculator::compatibleSum($carry, $currentProbability),

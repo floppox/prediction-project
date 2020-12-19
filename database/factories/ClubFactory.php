@@ -23,8 +23,8 @@ class ClubFactory extends Factory
     public function definition()
     {
         return [
-            'name' => $this->faker->name,
-            'notional_strength' => $this->faker->randomNumber(1),
+            'name' => $this->faker->word,
+            'notional_strength' => rand(1,10),
         ];
     }
 }

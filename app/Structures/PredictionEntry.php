@@ -7,7 +7,7 @@ class PredictionEntry
     public function __construct(
         private int $clubId,
         private string $clubName,
-        private int $position,
+        private ?int $position = null,
         private ?float $championshipProbability = null
     ) {}
 

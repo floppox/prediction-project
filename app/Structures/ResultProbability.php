@@ -8,7 +8,11 @@ class ResultProbability
         private float $win,
         private float $drawn,
         private float $lose,
-    ) {}
+    ) {
+        if (0 == $this->win || 0 == $this->drawn || 0 == $this->lose) {
+            throw new \RuntimeException('Zero value is not allowed in ResultProbability context');
+        }
+    }
 
     public function win() {
         return $this->win;

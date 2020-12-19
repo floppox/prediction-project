@@ -5,6 +5,8 @@ namespace App\Calculators;
 use App\Enums\PointsForResult;
 use App\Structures\PointsProbability;
 use App\Structures\ResultProbability;
+use Facades\App\Calculators\FloatComparator;
+use Facades\App\Calculators\SimpleProbabilityCalculator as SimpleProbabilityCalculatorFacade;
 use Illuminate\Support\Collection;
 
 class ReachPointsSumProbabilityCalculator
@@ -13,30 +15,31 @@ class ReachPointsSumProbabilityCalculator
 
     public function handle($pointsToReachLeader, Collection $resultProbabilities): float
     {
-        $resultProbabilities->each(
-            fn($meetResultProbability) => $this->appendProbabilityChains($meetResultProbability)
+        $this->refreshProbabilityChains();
+
+        $probabilityChains = $this->filterChainsAllowingToReachLeader(
+            $this->buildProbabilitiesChainForFuturesMatches($resultProbabilities),
+            $pointsToReachLeader
         );
 
-        $result = $this->probabilityChains
-            ->filter(
-                fn($chain) => $pointsToReachLeader < collect($chain)->sum(
-                        fn(PointsProbability $pointsProbability) => $pointsProbability->getPoints()
-                    )
-            )
-            ->map(
-                fn($chain) => collect($chain)->reduce(
-                    fn(
-                        float $carry,
-                        PointsProbability $pointsProbability
-                    ) => $carry * $pointsProbability->getProbability(),
-                    1
-                )
-            )
+        $result = $probabilityChains
+            ->map(fn($chain) => $this->calculateChainProbability(collect($chain)))
             ->sum();
 
-        $this->probabilityChains = null;
+        $this->validate($result);
 
         return $result;
+    }
+
+    private function calculateChainProbability(Collection $chain): float
+    {
+        return $chain->reduce(
+            fn(float $carry, PointsProbability $pointsProbability) =>
+                SimpleProbabilityCalculatorFacade::multiplication(
+                    $carry, $pointsProbability->getProbability()
+                ),
+            1
+        );
     }
 
     private function appendProbabilityChains(ResultProbability $meetResultProbability)
@@ -61,5 +64,39 @@ class ReachPointsSumProbabilityCalculator
         }
 
         $this->probabilityChains = collect($newProbabilityChains);
+    }
+
+    private function buildProbabilitiesChainForFuturesMatches(Collection $resultProbabilities): Collection
+    {
+        $resultProbabilities->each(
+            fn($meetResultProbability) => $this->appendProbabilityChains($meetResultProbability)
+        );
+
+        return $this->probabilityChains;
+    }
+
+    private function filterChainsAllowingToReachLeader(Collection $probabilityChains, $pointsToReachLeader): Collection
+    {
+        return $probabilityChains->filter(
+            fn($chain) => $pointsToReachLeader <= collect($chain)->sum(
+                fn(PointsProbability $pointsProbability) => $pointsProbability->getPoints()
+            )
+        );
+    }
+
+    private function refreshProbabilityChains()
+    {
+        $this->probabilityChains = null;
+    }
+
+    private function validate(float ...$parameters)
+    {
+        foreach ($parameters as $a) {
+            if (
+                FloatComparator::firstGrater(0, $a) || FloatComparator::firstGrater($a, 1)
+            ) {
+                throw new \RuntimeException("Invalid Probability $a got in " . self::class);
+            }
+        }
     }
 }

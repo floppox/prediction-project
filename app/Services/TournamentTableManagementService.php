@@ -12,7 +12,7 @@ class TournamentTableManagementService
 {
     public function getTable()
     {
-        return TournamentTableEntry::orderBy('position')->get();
+        return TournamentTableEntry::orderBy('position')->with('club')->get();
     }
 
     public function createTable()

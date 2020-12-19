@@ -59,4 +59,9 @@ class Club extends Model
     {
         return $this->meets()->where('status', MeetStatus::FIXTURE);
     }
+
+    public function meetsPlayed()
+    {
+        return $this->meets()->where('status', MeetStatus::COMPLETED);
+    }
 }
